@@ -1,0 +1,84 @@
+﻿@page "/weatherPersistentState"
+@implements IDisposable
+@inject PersistentComponentState ApplicationState
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+
+<p>
+    The data in the table is loaded in the OnInitializedAsync method. The data is saved as Json using PersistentComponentState.<br />
+    At the start of the method, if no data has been cached, then new data is generated. Otherwise, it's loaded from the cache.
+</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+    private WeatherForecast[]? forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _subscription = ApplicationState.RegisterOnPersisting(Persist);
+
+        if (ApplicationState.TryTakeFromJson<WeatherForecast[]>("forecasts", out forecasts))
+            return;
+
+        // Simulate asynchronous loading to demonstrate a loading indicator
+        await Task.Delay(500);
+
+        var startDate = DateOnly.FromDateTime(DateTime.Now);
+        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = startDate.AddDays(index),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = summaries[Random.Shared.Next(summaries.Length)]
+            }).ToArray();
+    }
+
+    private Task Persist()
+    {
+        ApplicationState.PersistAsJson("forecasts", forecasts);
+        return Task.CompletedTask;
+    }
+    public void Dispose()
+    {
+        _subscription.Dispose();
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+}

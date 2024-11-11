@@ -1,0 +1,36 @@
+﻿@page "/organisations"
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+
+<PageTitle>Organisations</PageTitle>
+
+@inject OrganisationApiClient OrganisationApi
+
+<MudText Typo="Typo.h3" GutterBottom="true">Organisations</MudText>
+
+<MudText Typo="Typo.body1">The weather API data is loaded from the BlazorDemo.OrganisationApi project. The data is cached in Redis, and is set to expire after 5 seconds.</MudText>
+
+@if (organisations is null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid Items="@organisations">
+        <Columns>
+            <PropertyColumn Property="x => x.OrganisationGuid" Title="Organisation Guid" />
+            <PropertyColumn Property="x => x.OrganisationName" Title="Organisation Name" />
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private Organisation[]? organisations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(500);
+
+        organisations = await OrganisationApi.GetOrganisationsAsync();
+    }
+}

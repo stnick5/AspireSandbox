@@ -1,0 +1,39 @@
+﻿@page "/weather"
+@attribute [StreamRendering(true)]
+@attribute [OutputCache(Duration = 5)]
+
+<PageTitle>Weather</PageTitle>
+
+@inject WeatherApiClient WeatherApi
+
+<MudText Typo="Typo.h3" GutterBottom="true">Weather</MudText>
+<MudText Typo="Typo.body1" Class="mb-8">The weather API data is loaded from the BlazorDemo.WeatherApiService project. The data is cached in Redis, and is set to expire after 5 seconds.</MudText>
+
+
+@if (forecasts == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudDataGrid Items="@forecasts">
+        <Columns>
+            <PropertyColumn Property="x => x.Date" Title="Date" />
+            <PropertyColumn Property="x => x.TemperatureC" Title="Temp. (C)" />
+            <PropertyColumn Property="x => x.TemperatureF" Title="Temp. (F)" />
+            <PropertyColumn Property="x => x.Summary" Title="Summary" />
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+    private WeatherForecast[]? forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate a loading indicator
+        await Task.Delay(500);
+
+        forecasts = await WeatherApi.GetWeatherAsync(500);
+    }
+}
