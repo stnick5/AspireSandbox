@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorDemo.AppHost", "BlazorDemo.AppHost\BlazorDemo.AppHost.csproj", "{F16D716E-8D23-45DE-B2C6-F10845F1FBEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorDemo.AppHost", "BlazorDemo.AppHost\BlazorDemo.AppHost.csproj", "{F16D716E-8D23-45DE-B2C6-F10845F1FBEF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorDemo.ServiceDefaults", "BlazorDemo.ServiceDefaults\BlazorDemo.ServiceDefaults.csproj", "{24028050-6E7E-421F-9619-64EF7BA0F4FD}"
 EndProject
