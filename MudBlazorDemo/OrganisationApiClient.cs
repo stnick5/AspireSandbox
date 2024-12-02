@@ -35,4 +35,4 @@ public class OrganisationApiClient(HttpClient httpClient)
     }
 }
 
-public record Organisation(Guid OrganisationGuid, string OrganisationName);
+public record Organisation(Guid OrganisationGuid, string OrganisationName, int NumberOfConnectors, bool Healthy);

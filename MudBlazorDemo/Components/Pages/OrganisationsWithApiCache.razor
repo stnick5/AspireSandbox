@@ -1,6 +1,9 @@
 ﻿@page "/organisationsWithApiCache"
+@implements IDisposable
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
+
+@inject PersistentComponentState ApplicationState
 
 <PageTitle>Organisations</PageTitle>
 
@@ -12,27 +15,50 @@
 <MudText Typo="Typo.body1">Unlike on the Weather page the InteractiveWebAssembly rendermode isn't specified on this page. Because of this reloading the page causes the data to be regenerated, without being pulled from the cache.</MudText>
 <MudText Typo="Typo.body1" Class="mb-8">The OnInitializedAsync() method is also being called twice on page refresh, resulting in the data being generated twice.</MudText>
 
-@if (organisations is null)
+@if (_organisations is null)
 {
     <MudProgressCircular Color="Color.Default" Indeterminate="true" />
 }
 else
 {
-    <MudDataGrid Items="@organisations">
+    <MudDataGrid Items="@_organisations">
         <Columns>
             <PropertyColumn Property="x => x.OrganisationGuid" Title="Organisation Guid" />
             <PropertyColumn Property="x => x.OrganisationName" Title="Organisation Name" />
+            <PropertyColumn Property="x => x.NumberOfConnectors" Title="Number of Connectors"/>
+            <PropertyColumn Property="x => x.Healthy" Title="Health"/>
         </Columns>
     </MudDataGrid>
 }
 
 @code {
-    private Organisation[]? organisations;
+    private Organisation[]? _organisations;
+    private const string OrganisationDataKey = "OrganisationData";
+    private PersistingComponentStateSubscription _persistingComponentStateSubscription;
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(500);
+        _persistingComponentStateSubscription = ApplicationState.RegisterOnPersisting(PersistOrganisationData);
 
-        organisations = await OrganisationApi.GetOrganisationsWithCachingAsync();
+        if (!ApplicationState.TryTakeFromJson<Organisation[]>(OrganisationDataKey, out var restored))
+        {
+            _organisations = await OrganisationApi.GetOrganisationsWithCachingAsync();
+        }
+        else
+        {
+            _organisations = restored;
+        }
     }
+
+    private Task PersistOrganisationData()
+    {
+        ApplicationState.PersistAsJson(OrganisationDataKey, _organisations);
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _persistingComponentStateSubscription.Dispose();
+    }
+
 }

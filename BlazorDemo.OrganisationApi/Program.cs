@@ -23,7 +23,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/organisations", () =>
 {
-    var organisationFactory = new Faker<Organisation>().CustomInstantiator(f => new Organisation(f.Random.Uuid(), f.Company.CompanyName()));
+    var organisationFactory = new Faker<Organisation>().CustomInstantiator(f => new Organisation(f.Random.Uuid(), f.Company.CompanyName(), f.Random.Int(1, 4), f.Random.Bool()));
     var organisations = organisationFactory.Generate(100);
 
     return organisations;
@@ -51,7 +51,9 @@ app.MapGet("/orgswithcaching", async ([FromServices] IDistributedCache cache, [F
             return Results.Ok(deserializedResponse);
         }
 
-        var organisationFactory = new Faker<Organisation>().CustomInstantiator(f => new Organisation(f.Random.Uuid(), f.Company.CompanyName()));
+        var organisationFactory = new Faker<Organisation>().CustomInstantiator(f =>
+            new Organisation(f.Random.Uuid(), f.Company.CompanyName(), f.Random.Int(1, 4), f.Random.Bool()));
+        
         var organisations = organisationFactory.Generate(100);
 
         await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(organisations), new DistributedCacheEntryOptions
@@ -70,4 +72,4 @@ app.MapGet("/orgswithcaching", async ([FromServices] IDistributedCache cache, [F
 
 app.Run();
 
-record Organisation(Guid OrganisationGuid, string OrganisationName);
+record Organisation(Guid OrganisationGuid, string OrganisationName, int NumberOfConnectors, bool Healthy);
