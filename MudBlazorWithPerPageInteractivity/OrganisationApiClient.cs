@@ -6,7 +6,8 @@ public class OrganisationApiClient(HttpClient httpClient)
     {
         List<Organisation>? organisations = null;
 
-        await foreach (var organisation in httpClient.GetFromJsonAsAsyncEnumerable<Organisation>("/organisations", cancellationToken))
+        await foreach (var organisation in httpClient.GetFromJsonAsAsyncEnumerable<Organisation>("/organisations",
+                           cancellationToken))
         {
             if (organisation is not null)
             {
@@ -17,6 +18,27 @@ public class OrganisationApiClient(HttpClient httpClient)
 
         return organisations?.ToArray() ?? [];
     }
+
+    public async Task<Connector[]> GetConnectorsAsync(Guid organisationGuid,
+        CancellationToken cancellationToken = default)
+    {
+        List<Connector>? connectors = null;
+
+        await foreach (var connector in httpClient.GetFromJsonAsAsyncEnumerable<Connector>(
+                           "/connectorswithcaching?organisationGuid=" + organisationGuid,
+                           cancellationToken))
+        {
+            if (connector is not null)
+            {
+                connectors ??= [];
+                connectors.Add(connector);
+            }
+        }
+
+        return connectors?.ToArray() ?? [];
+    }
 }
 
-public record Organisation(Guid OrganisationGuid, string OrganisationName);
+public record Organisation(Guid OrganisationGuid, string OrganisationName, int NumberOfConnectors, bool Healthy);
+
+public record Connector(Guid OrganisationGuid, Guid ConnectorGuid, string Name, bool Healthy);

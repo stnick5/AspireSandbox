@@ -11,9 +11,9 @@
 
 <MudText Typo="Typo.h3" GutterBottom="true">Organisations</MudText>
 
-<MudText Typo="Typo.body1">The weather API data is loaded from the BlazorDemo.OrganisationApi project. The data is cached in Redis, and is set to expire after 5 seconds.</MudText>
-<MudText Typo="Typo.body1">Unlike on the Weather page the InteractiveWebAssembly rendermode isn't specified on this page. Because of this reloading the page causes the data to be regenerated, without being pulled from the cache.</MudText>
-<MudText Typo="Typo.body1" Class="mb-8">The OnInitializedAsync() method is also being called twice on page refresh, resulting in the data being generated twice.</MudText>
+@* <MudText Typo="Typo.body1">The weather API data is loaded from the BlazorDemo.OrganisationApi project. The data is cached in Redis, and is set to expire after 5 seconds.</MudText> *@
+@* <MudText Typo="Typo.body1">Unlike on the Weather page the InteractiveWebAssembly rendermode isn't specified on this page. Because of this reloading the page causes the data to be regenerated, without being pulled from the cache.</MudText> *@
+@* <MudText Typo="Typo.body1" Class="mb-8">The OnInitializedAsync() method is also being called twice on page refresh, resulting in the data being generated twice.</MudText> *@
 
 @if (_organisations is null)
 {
@@ -21,12 +21,24 @@
 }
 else
 {
-    <MudDataGrid Items="@_organisations">
+    <MudDataGrid 
+        Items="@_organisations" 
+        Filterable="true" 
+        FilterMode="@_filterMode" 
+        FilterCaseSensitivity="@_caseSensitivity">
         <Columns>
-            <PropertyColumn Property="x => x.OrganisationGuid" Title="Organisation Guid" />
+            <PropertyColumn Property="x => x.OrganisationGuid" Title="Organisation Guid" Sortable="false" />
             <PropertyColumn Property="x => x.OrganisationName" Title="Organisation Name" />
-            <PropertyColumn Property="x => x.NumberOfConnectors" Title="Number of Connectors"/>
-            <PropertyColumn Property="x => x.Healthy" Title="Health"/>
+            <PropertyColumn Property="x => x.NumberOfConnectors" Title="Number of Connectors" Sortable="false"/>
+            @* <PropertyColumn Property="x => x.Healthy" Title="Health"/> *@
+            <TemplateColumn CellClass="d-flex justify-end" Sortable="true" SortBy="x => x.Healthy">
+                <CellTemplate>
+                    <MudStack Row>
+                        <MudAlert Severity="@(context.Item.Healthy ? Severity.Success : Severity.Error)"/>
+                        <MudButton Size="@Size.Small" Variant="Variant.Filled" Color="@Color.Primary">Details</MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
     </MudDataGrid>
 }
@@ -35,6 +47,11 @@ else
     private Organisation[]? _organisations;
     private const string OrganisationDataKey = "OrganisationData";
     private PersistingComponentStateSubscription _persistingComponentStateSubscription;
+
+    DataGridFilterMode _filterMode = DataGridFilterMode.Simple;
+    DataGridFilterCaseSensitivity _caseSensitivity = DataGridFilterCaseSensitivity.CaseInsensitive;
+    
+    
 
     protected override async Task OnInitializedAsync()
     {
