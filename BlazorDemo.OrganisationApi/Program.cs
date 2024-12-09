@@ -29,6 +29,53 @@ app.MapGet("/organisations", () =>
     return organisations;
 });
 
+app.MapGet("/connectorswithcaching",
+    async ([FromServices] IDistributedCache cache, [FromServices] IConnectionMultiplexer redis, Guid organisationGuid) =>
+    {
+        var connectorNames = new List<string>
+        {
+            "Net2", "Sage", "BioStar", "SignInApp", "PeopleHR", "Avigilon"
+        };
+        
+        var lockKey = "connectorbyorganisationLock";
+        var db = redis.GetDatabase();
+        var lockAcquired = await db.LockTakeAsync(lockKey, Environment.MachineName, TimeSpan.FromSeconds(10));
+
+        if (!lockAcquired)
+        {
+            return Results.StatusCode(423);
+        }
+
+        try
+        {
+            var cacheKey = "connectorbyorganisation";
+            var cachedConnectors = await cache.GetStringAsync(cacheKey);
+
+            if (cachedConnectors is not null)
+            {
+                var deserializedResponse = JsonSerializer.Deserialize<List<Connector>>(cachedConnectors);
+                return Results.Ok(deserializedResponse);
+            }
+
+            var connectorFactory = new Faker<Connector>()
+                .CustomInstantiator(f =>
+                    new Connector(organisationGuid, f.Random.Uuid(), f.PickRandom(connectorNames), f.Random.Bool()));
+
+            var connectors = connectorFactory.GenerateBetween(1, 4);
+
+            await cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(connectors), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10)
+            });
+            
+            return Results.Ok(connectors);
+        }
+        finally
+        {
+            await db.LockReleaseAsync(lockKey, Environment.MachineName);
+        }
+    });
+
 app.MapGet("/orgswithcaching", async ([FromServices] IDistributedCache cache, [FromServices] IConnectionMultiplexer redis) =>
 {
     var lockKey = "organisationsLock";
@@ -73,3 +120,5 @@ app.MapGet("/orgswithcaching", async ([FromServices] IDistributedCache cache, [F
 app.Run();
 
 record Organisation(Guid OrganisationGuid, string OrganisationName, int NumberOfConnectors, bool Healthy);
+
+record Connector(Guid OrganisationGuid, Guid ConnectorGuid, string Name, bool Healthy);
